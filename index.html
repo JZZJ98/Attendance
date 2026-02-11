@@ -26,8 +26,6 @@
       text-align: center;
       border: 1px solid rgba(255,255,255,0.5);
     }
-
-    /* Fun Healthcare Animated Icon */
     .health-icon {
       font-size: 3rem;
       margin-bottom: 1rem;
@@ -39,45 +37,17 @@
       50% { transform: scale(1.1); }
       100% { transform: scale(1); }
     }
-
-    h1 { 
-      color: #0369a1; 
-      font-size: 1.6rem; 
-      margin-bottom: 12px;
-      line-height: 1.2;
-    }
-    p { 
-      color: #475569; 
-      font-size: 0.95rem; 
-      margin-bottom: 2rem; 
-      line-height: 1.5; 
-    }
-    
+    h1 { color: #0369a1; font-size: 1.6rem; margin-bottom: 12px; line-height: 1.2; }
+    p { color: #475569; font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5; }
     button { 
-      padding: 1.1rem; 
-      width: 100%;
-      font-size: 1.1rem; 
-      font-weight: 600;
+      padding: 1.1rem; width: 100%; font-size: 1.1rem; font-weight: 600;
       background: linear-gradient(to right, #0ea5e9, #0284c7);
-      color: white; 
-      border: none; 
-      border-radius: 20px; 
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
-      transition: all 0.2s ease;
+      color: white; border: none; border-radius: 20px; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); transition: all 0.2s ease;
     }
-    button:hover { 
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(14, 165, 233, 0.4);
-    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(14, 165, 233, 0.4); }
     button:active { transform: scale(0.96); }
-
-    #out { 
-      margin-top: 20px;
-      font-size: 0.85rem;
-      color: #64748b;
-      min-height: 40px;
-    }
+    #out { margin-top: 20px; font-size: 0.85rem; color: #64748b; min-height: 40px; }
     .status-ok { color: #059669; font-weight: bold; }
     .status-err { color: #dc2626; font-weight: bold; }
   </style>
@@ -87,17 +57,17 @@
     <div class="health-icon">🏥</div>
     <h1>Attendance<br>Check-in/Check-out</h1>
     <p>Please verify your location to securely submit your attendance.</p>
-    
     <button id="check">Verify & Continue ➜</button>
-    
     <div id="out">Ready to verify.</div>
   </div>
 
   <script>
+    // ====== CONFIG (Updated to 200m) ======
     const CLINICLAT = 1.3345499;
     const CLINICLNG = 103.858986;
-    const ALLOWED_RADIUS_METERS = 50; 
+    const ALLOWED_RADIUS_METERS = 200; // Increased to 200m
     const FORMSG_URL = "https://form.gov.sg/69647c83f2170fd29c8fec32";
+    // ======================================
 
     const out = document.getElementById('out');
     const btn = document.getElementById('check');
@@ -130,6 +100,7 @@
             const u = new URL(FORMSG_URL);
             u.searchParams.set('lat', latitude.toFixed(6));
             u.searchParams.set('lng', longitude.toFixed(6));
+            u.searchParams.set('dist_m', Math.round(dist));
             window.location.href = u.toString();
           } else {
             out.innerHTML = `<span class="status-err">Access Denied.<br>You are ${Math.round(dist)}m away from TPY Clinic.</span>`;
