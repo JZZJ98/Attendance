@@ -1,4 +1,3 @@
-Create api/token.ts:
 // api/token.ts  — issues a short‑lived, one‑time token
 import { kv } from '@vercel/kv';
 
