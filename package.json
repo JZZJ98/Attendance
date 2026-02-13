@@ -1,0 +1,8 @@
+{
+  "name": "formsg-gateway",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/kv": "latest"
+  }
+}
