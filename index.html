@@ -61,103 +61,78 @@
     <div id="out">Ready to verify.</div>
   </div>
 
-  <script>
-  // ====== CONFIG ======
-  const CLINICLAT = 1.3345499;
-  const CLINICLNG = 103.858986;
-  const ALLOWED_RADIUS_METERS = 170;
+<script>
+// ====== CONFIG ======
+const CLINICLAT = 1.3345499;
+const CLINICLNG = 103.858986;
+const ALLOWED_RADIUS_METERS = 170;
 
-  const FORMSG_URL = "https://form.gov.sg/69647c83f2170fd29c8fec32";
+// 🔴 PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxW_hPhTGquyaXYPGhNKz9xyhIGXn5zWsGdPh6f9l-ND-jO7FsMaj4hvnBcLA4SLJkg/exec";
+// ====================
 
-  // 🔴 PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxW_hPhTGquyaXYPGhNKz9xyhIGXn5zWsGdPh6f9l-ND-jO7FsMaj4hvnBcLA4SLJkg/exec";
-  // ====================
+const out = document.getElementById('out');
+const btn = document.getElementById('check');
 
-  const out = document.getElementById('out');
-  const btn = document.getElementById('check');
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.sin(dLon/2)**2;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
 
-  function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371000;
-    const toRad = d => d * Math.PI / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(toRad(lat1)) *
-              Math.cos(toRad(lat2)) *
-              Math.sin(dLon/2)**2;
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+btn.addEventListener('click', () => {
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  out.innerHTML = 'Scanning location...';
+
+  if (!navigator.geolocation) {
+    out.innerHTML = '<span class="status-err">Location not supported.</span>';
+    btn.disabled = false;
+    return;
   }
 
-  btn.addEventListener('click', async () => {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
 
-    btn.disabled = true;
-    btn.textContent = 'Verifying...';
-    out.innerHTML = 'Scanning location...';
+      const { latitude, longitude, accuracy } = pos.coords;
+      const dist = haversine(latitude, longitude, CLINICLAT, CLINICLNG);
 
-    if (!navigator.geolocation) {
-      out.innerHTML = '<span class="status-err">Location not supported.</span>';
-      btn.disabled = false;
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-
-        const { latitude, longitude, accuracy } = pos.coords;
-        const dist = haversine(latitude, longitude, CLINICLAT, CLINICLNG);
-
-        if (dist > ALLOWED_RADIUS_METERS) {
-          out.innerHTML = `<span class="status-err">Access Denied.<br>You are ${Math.round(dist)}m away from TPY Clinic.</span>`;
-          btn.textContent = 'Retry 🔄';
-          btn.disabled = false;
-          return;
-        }
-
-        out.innerHTML = 'Location verified. Generating secure access...';
-
-        try {
-
-          // 🔐 Call Google Apps Script to issue token
-          const response = await fetch(APPS_SCRIPT_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              lat: latitude,
-              lng: longitude,
-              acc: accuracy
-            })
-          });
-
-          const data = await response.json();
-
-          if (data.error) {
-            out.innerHTML = `<span class="status-err">${data.error}</span>`;
-            btn.disabled = false;
-            btn.textContent = "Retry 🔄";
-            return;
-          }
-
-          // ✅ Redirect with one-time token
-          const u = new URL(FORMSG_URL);
-          u.searchParams.set("t", data.token);
-
-          window.location.href = u.toString();
-
-        } catch (err) {
-          out.innerHTML = '<span class="status-err">Network error. Please try again.</span>';
-          btn.disabled = false;
-          btn.textContent = "Retry 🔄";
-        }
-
-      },
-      (err) => {
-        out.innerHTML = '<span class="status-err">Please enable location access.</span>';
-        btn.textContent = 'Try Again 🔄';
+      if (dist > ALLOWED_RADIUS_METERS) {
+        out.innerHTML = `<span class="status-err">
+          Access Denied.<br>
+          You are ${Math.round(dist)}m away from TPY Clinic.
+        </span>`;
+        btn.textContent = 'Retry 🔄';
         btn.disabled = false;
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+        return;
+      }
 
-  });
+      // ✅ Instead of fetch → we REDIRECT (no CORS problems)
+      out.innerHTML = 'Location verified. Redirecting...';
+
+      const url = new URL(APPS_SCRIPT_URL);
+      url.searchParams.set("lat", latitude);
+      url.searchParams.set("lng", longitude);
+      url.searchParams.set("acc", accuracy);
+
+      window.location.href = url.toString();
+    },
+    () => {
+      out.innerHTML = '<span class="status-err">Please enable location access.</span>';
+      btn.textContent = 'Try Again 🔄';
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+
+});
 </script>
 </body>
 </html>
